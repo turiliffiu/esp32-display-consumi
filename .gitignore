@@ -1,0 +1,13 @@
+# Segreti - MAI committare
+secrets.yaml
+*.env
+.env
+
+# Build ESPHome
+.esphome/
+*.bin
+
+# OS / editor
+.DS_Store
+*.swp
+.vscode/
