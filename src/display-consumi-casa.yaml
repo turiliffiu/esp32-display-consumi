@@ -3,7 +3,7 @@ esphome:
   friendly_name: "Display Consumi Casa"
 
 esp32:
-  board: esp32dev
+  board: esp32-c3-devkitm-1
   framework:
     type: arduino
 
@@ -29,15 +29,12 @@ ota:
     password: !secret ota_password
 
 i2c:
-  sda: GPIO21
-  scl: GPIO22
+  sda: GPIO5
+  scl: GPIO6
   scan: true
   id: bus_a
 
 font:
-  - file: "gfonts://Roboto"
-    id: font_large
-    size: 24
   - file: "gfonts://Roboto"
     id: font_small
     size: 14
@@ -46,7 +43,7 @@ sensor:
   - platform: homeassistant
     id: consumo_casa
     entity_id: sensor.shellyem_c7f7a1_channel_1_power
-    internal: false
+    internal: true
 
   - platform: wifi_signal
     name: "Display WiFi Signal"
@@ -54,17 +51,15 @@ sensor:
 
 display:
   - platform: ssd1306_i2c
-    model: "SSD1306 128x64"
+    model: "SSD1306 72x40"
     address: 0x3C
     i2c_id: bus_a
     id: oled_display
     update_interval: 2s
     lambda: |-
-      it.printf(0, 0, id(font_small), "Consumo Casa");
-      it.line(0, 18, 128, 18);
       if (id(consumo_casa).has_state()) {
-        it.printf(64, 40, id(font_large), TextAlign::CENTER,
+        it.printf(36, 20, id(font_small), TextAlign::CENTER,
                    "%.0f W", id(consumo_casa).state);
       } else {
-        it.printf(64, 40, id(font_large), TextAlign::CENTER, "-- W");
+        it.printf(36, 20, id(font_small), TextAlign::CENTER, "-- W");
       }
