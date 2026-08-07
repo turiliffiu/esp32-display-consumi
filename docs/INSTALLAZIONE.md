@@ -2,21 +2,29 @@
 
 ## Prerequisiti
 
-- ESP32 DevKit
-- Display OLED SSD1306 128x64 (I2C)
-- ESPHome CLI installato sull'ambiente di deploy (Server #2)
+- Scheda 01space ESP32-C3 0.42 OLED (display integrato, non serve hardware aggiuntivo)
+- Cavo USB-C dati (non solo-carica — verificare prima di procedere, causa comune di mancato riconoscimento)
+- ESPHome CLI installato sull'ambiente di deploy (Server #2), in un virtualenv Python dedicato
 - Home Assistant raggiungibile in rete dall'ESP32
 
-## 1. Collegamento hardware
+## 1. Hardware
 
-| ESP32   | SSD1306 |
-|---------|---------|
-| 3.3V    | VCC     |
-| GND     | GND     |
-| GPIO21  | SDA     |
-| GPIO22  | SCL     |
+Nessun collegamento manuale necessario: il display OLED è già saldato sul PCB, collegato internamente su:
+- SDA: GPIO5
+- SCL: GPIO6
 
-## 2. Configurazione segreti
+Questi pin sono di fabbrica e non vanno modificati nella configurazione.
+
+## 2. Setup ambiente ESPHome
+
+```bash
+python3 -m venv ~/venv-esphome
+source ~/venv-esphome/bin/activate
+pip install esphome
+esphome version
+```
+
+## 3. Configurazione segreti
 
 ```bash
 cp src/secrets.yaml.example src/secrets.yaml
@@ -24,34 +32,56 @@ cp src/secrets.yaml.example src/secrets.yaml
 
 Compila `src/secrets.yaml` con:
 - SSID e password WiFi di casa
-- Chiave di cifratura API (generabile con `esphome secrets` o un generatore base64 a 32 byte)
+- Chiave di cifratura API: genera con
+```bash
+  python3 << 'PYEOF'
+  import base64, os
+  print(base64.b64encode(os.urandom(32)).decode())
+  PYEOF
+```
 - Password OTA a tua scelta
 
-## 3. Validazione configurazione
+## 4. Validazione configurazione
 
 ```bash
-esphome compile src/display-consumi-casa.yaml
+esphome config src/display-consumi-casa.yaml
 ```
 
-Verifica che la compilazione termini senza errori prima di procedere.
+Deve terminare con `INFO Configuration is valid!`.
 
-## 4. Flash iniziale
+## 5. Identificazione porta seriale
 
-Collega l'ESP32 via USB al Server #2, poi:
+```bash
+lsusb
+ls /dev/ttyACM* /dev/ttyUSB* 2>/dev/null
+```
+
+La scheda espone un'interfaccia USB JTAG/serial nativa Espressif (vendor ID `303a:1001`), tipicamente su `/dev/ttyACM0` (non `/dev/ttyUSB0`).
+
+Verifica di essere nel gruppo `dialout`:
+```bash
+groups $USER
+```
+
+## 6. Flash iniziale
 
 ```bash
 esphome run src/display-consumi-casa.yaml
 ```
 
-Alla prima installazione ESPHome chiederà la porta seriale (es. `/dev/ttyUSB0`).
+Seleziona la porta seriale identificata al passo 5 quando richiesto.
 
-## 5. Verifica in Home Assistant
+## 7. Aggiunta integrazione in Home Assistant
 
-Dopo il primo flash, l'ESP32 dovrebbe comparire automaticamente in *Impostazioni → Dispositivi e servizi* come nuova integrazione ESPHome (via mDNS). Se non compare entro un minuto, controlla che HA e l'ESP32 siano sulla stessa subnet.
+1. *Impostazioni → Dispositivi e servizi* — il device dovrebbe comparire in auto-discovery (mDNS) come "display-consumi-casa"
+2. Se non compare, aggiungi manualmente l'integrazione ESPHome inserendo `display-consumi-casa.local` o l'IP diretto
+3. Inserisci la chiave di cifratura API (`api_encryption_key` da `secrets.yaml`) quando richiesta
 
-## 6. Aggiornamenti successivi (OTA)
+## 8. Verifica finale
 
-Una volta flashato via USB la prima volta, gli aggiornamenti successivi possono avvenire via WiFi:
+Il display dovrebbe mostrare il valore reale in Watt entro pochi secondi dall'autenticazione con HA. Se resta su `-- W`, vedi `TROUBLESHOOTING.md`.
+
+## 9. Aggiornamenti successivi (OTA)
 
 ```bash
 esphome run src/display-consumi-casa.yaml --device display-consumi-casa.local
