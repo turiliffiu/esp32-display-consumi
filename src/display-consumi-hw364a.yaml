@@ -1,0 +1,68 @@
+esphome:
+  name: display-consumi-hw364a
+  friendly_name: "Display Consumi Casa (HW-364A)"
+
+esp8266:
+  board: nodemcuv2
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  ap:
+    ssid: "Display-Consumi-HW364A Fallback"
+    password: "12345678"
+
+captive_portal:
+
+logger:
+  level: INFO
+
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+i2c:
+  sda: GPIO14
+  scl: GPIO12
+  scan: true
+  id: bus_a
+
+font:
+  - file: "gfonts://Roboto"
+    id: font_medium
+    size: 24
+  - file: "gfonts://Roboto"
+    id: font_small
+    size: 14
+
+sensor:
+  - platform: homeassistant
+    id: consumo_casa
+    entity_id: sensor.shellyem_c7f7a1_channel_1_power
+    internal: true
+
+  - platform: wifi_signal
+    name: "Display HW364A WiFi Signal"
+    update_interval: 60s
+
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x64"
+    address: 0x3C
+    i2c_id: bus_a
+    id: oled_display
+    update_interval: 2s
+    lambda: |-
+      it.printf(64, 5, id(font_small), TextAlign::TOP_CENTER, "Consumo Casa");
+      it.line(0, 22, 128, 22);
+      if (id(consumo_casa).has_state()) {
+        it.printf(64, 40, id(font_medium), TextAlign::CENTER,
+                   "%.0f W", id(consumo_casa).state);
+      } else {
+        it.printf(64, 40, id(font_medium), TextAlign::CENTER, "-- W");
+      }

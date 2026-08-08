@@ -20,3 +20,11 @@ e il progetto aderisce a [Semantic Versioning](https://semver.org/lang/it/).
 
 ### Known issues
 - Alcuni cloni di questa scheda montano in realtà un chip SH1107 anziché un vero SSD1306, che con il driver sbagliato può causare rendering parzialmente corrotto — se il problema dovesse ripresentarsi dopo un cambio scheda, verificare il datasheet del controller reale
+
+## [1.1.0] - 2026-08-08
+
+### Added
+- Secondo display: scheda **ESP8266 HW-364A** (OLED 128x64 integrato), stesso dato `sensor.shellyem_c7f7a1_channel_1_power`
+- File `src/display-consumi-hw364a.yaml` — nodo separato (`display-consumi-hw364a`), stesso `secrets.yaml` condiviso (stessa rete WiFi)
+- I2C su GPIO14 (SDA) / GPIO12 (SCL), board ESPHome `nodemcuv2`, layout con titolo "Consumo Casa" + valore in Watt
+- Flash funzionante al primo tentativo, nessun problema di rumore grafico riscontrato su questo modello
